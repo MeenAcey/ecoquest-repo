@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ♦ ECOQUEST ♦
 
-## Getting Started
+> **Waste Detection & Upcycling RPG**  
+> Developed by **TerraByte** · Earth Day 2026  
+> *Turning today's waste into tomorrow's treasures.*
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✦ Overview
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**EcoQuest** is a web application designed to gamify the process of recycling and upcycling. By leveraging AI vision models, EcoQuest identifies waste items from uploaded images, categorizes them by rarity, and provides creative upcycling recipes—all while rewarding the user with experience points (XP) to ascend through environmental ranks.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ✦ Key Features
 
-## Learn More
+- **AI Vision Analysis**: Powered by **Roboflow's Florence-2** model for precise object detection and material identification.
+- **RPG Progression**: 
+    - **Rarity System**: Items classified as Common, Rare, Epic, or Legendary.
+    - **XP Rewards**: Earn XP for every scan based on item rarity.
+    - **Rank Ascension**: Climb from *Seedling* to *Gaia Legend*.
+- **Creative Upcycling**: Generates contextual "Transmutation Recipes" for your waste.
+- **OCR Integration**: Optional text extraction for product labels and packaging context.
+- **Persistent Stats**: Your rank and XP are saved locally in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ✦ Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Layer | Technology |
+|---|---|
+| **Framework** | Next.js 16 (App Router) |
+| **Styling** | Tailwind CSS 4 |
+| **Animations** | Framer Motion |
+| **AI Vision** | Roboflow Serverless Workflows (Florence-2) |
+| **Persistence** | Browser `localStorage` |
+| **Language** | TypeScript |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ✦ Getting Started
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd ecoquest
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables**:
+   Create a `.env.local` file in the root directory and add your Roboflow API key:
+   ```env
+   ROBOFLOW_API_KEY=your_roboflow_api_key_here
+   ```
+
+4. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+---
+
+## ✦ Testing & Scripts
+
+- **Development**: `npm run dev` - Starts the dev server with hot-reloading.
+- **Linting**: `npm run lint` - Runs ESLint to check for code quality and patterns.
+- **Building**: `npm run build` - Creates a production-ready build.
+- **Production**: `npm run start` - Starts the production server after building.
+
+---
+
+## ✦ Vision Integration Details
+
+EcoQuest uses the **Roboflow Workflows** API. When an image is uploaded:
+1. The image is processed by the **Florence-2** model.
+2. A material-aware prompt guides the AI to determine the item's properties.
+3. The result is parsed for keywords to determine rarity and generate eco-facts.
+4. If **OCR** is enabled, the system extracts text from the image to provide additional context for the analysis.
+
+---
+
+## ✦ Developed by TerraByte
+♦ **ECOQUEST • EARTH DAY 2026** ♦
