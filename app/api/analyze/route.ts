@@ -96,6 +96,35 @@ export async function POST(req: NextRequest) {
     // Convert base64 to data URL for Roboflow
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
+    // Optional OCR text extraction
+    let ocrText: string | null = null;
+    if (useOCR && process.env.IMAGGA_API_KEY && process.env.IMAGGA_API_SECRET) {
+      try {
+        const imageBuffer = Buffer.from(imageBase64, 'base64');
+        const formData = new FormData();
+        const blob = new Blob([imageBuffer], { type: mimeType });
+        formData.append('image', blob);
+
+        const ocrRes = await fetch('https://api.imagga.com/v2/text', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${process.env.IMAGGA_API_KEY}:${process.env.IMAGGA_API_SECRET}`).toString('base64')}`
+          },
+          body: formData
+        });
+
+        if (ocrRes.ok) {
+          const ocrJson = await ocrRes.json();
+          if (ocrJson?.result?.text) {
+            const rawText = ocrJson.result.text;
+            ocrText = typeof rawText === 'string' ? rawText : (rawText.english || rawText.raw || null);
+          }
+        }
+      } catch (err) {
+        console.warn("OCR processing failed non-fatally:", err);
+      }
+    }
+
     // Call Roboflow Workflows API with proper format
     const response = await fetch(
       `https://serverless.roboflow.com/${workspace}/workflows/${workflowId}`,
@@ -188,17 +217,21 @@ export async function POST(req: NextRequest) {
     const rarity = detectRarity(detectedLabels.length > 0 ? detectedLabels : [primaryLabel.toLowerCase()]);
     const xp = XP_VALUES[rarity] || 25;
 
+    const finalDescription = ocrText
+      ? `Analysis: "${caption}" (OCR Text Detected: "${ocrText}")`
+      : `Analysis: "${caption}"`;
+
     return NextResponse.json({
       itemName: primaryLabel,
       material: primaryLabel,
       rarity,
-      description: `Analysis: "${caption}"`,
+      description: finalDescription,
       upcycleRecipe: buildUpcycle(primaryLabel, rarity),
       xp,
       ecoFact: getEcoFact(primaryLabel, rarity),
       detectedClasses: detectedLabels,
-      extractedText: null,
-      ocrData: null,
+      extractedText: ocrText,
+      ocrData: ocrText ? { text: ocrText } : null,
     });
   } catch (error: any) {
     console.error("Roboflow Analyze Error:", error);

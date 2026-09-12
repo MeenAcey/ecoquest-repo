@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { PT_Serif } from "next/font/google";
 import "./globals.css";
 import HydrationWrapper from "@/components/HydrationWrapper";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import PlayerStats from "@/components/PlayerStats";
 
 const ptSerif = PT_Serif({
   variable: "--font-pt-serif",
@@ -10,8 +13,9 @@ const ptSerif = PT_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "EcoQuest | Event Menu",
-  description: "HoYoverse-style item scanner. Scan trash, earn XP.",
+  title: "EcoQuest | Scan. Upcycle. Ascend.",
+  description:
+    "A gamified waste identification app. Scan items, discover upcycling recipes, earn XP, and climb the ranks from Seedling to Gaia Legend.",
 };
 
 export default function RootLayout({
@@ -26,11 +30,14 @@ export default function RootLayout({
       suppressHydrationWarning={true}
     >
       <body
-        className="min-h-full flex flex-col text-[#3E3228] bg-[#2C2623]"
+        className="min-h-full flex flex-col bg-[#0e0f1a]"
         suppressHydrationWarning={true}
       >
         <HydrationWrapper>
+          <Navbar />
           {children}
+          <Footer />
+          <PlayerStats />
         </HydrationWrapper>
       </body>
     </html>

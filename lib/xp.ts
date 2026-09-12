@@ -20,6 +20,7 @@ export function addXP(amount: number) {
   if (typeof window === "undefined") return;
   const current = parseInt(localStorage.getItem("ecoquest_xp") || "0");
   localStorage.setItem("ecoquest_xp", String(current + amount));
+  window.dispatchEvent(new Event("storage"));
 }
 
 export function getXP(): number {

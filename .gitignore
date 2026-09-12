@@ -31,6 +31,7 @@ yarn-error.log*
 # env
 .env*
 *.local
+keys.txt
 
 # local test scripts (may contain hardcoded API keys)
 test_*.mjs
