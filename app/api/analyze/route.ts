@@ -85,13 +85,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    const apiKey = process.env.ROBOFLOW_API_KEY;
-    const workspace = process.env.ROBOFLOW_WORKSPACE;
-    const workflowId = process.env.ROBOFLOW_WORKFLOW_ID;
-    
-    if (!apiKey || !workspace || !workflowId) {
-      return NextResponse.json({ error: "Missing Roboflow credentials" }, { status: 500 });
-    }
+    const apiKey = process.env.ROBOFLOW_API_KEY || "Q5DFhCOqiU8w0i8gxbl4";
+    const workspace = process.env.ROBOFLOW_WORKSPACE || "meena-anood";
+    const workflowId = process.env.ROBOFLOW_WORKFLOW_ID || "qwen-vl";
 
     // Convert base64 to data URL for Roboflow
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
