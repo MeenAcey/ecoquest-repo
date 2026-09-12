@@ -147,79 +147,91 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Roboflow API Error:", response.status, errorText);
-      console.error("API Key used:", apiKey?.substring(0, 5) + "...");
-      return NextResponse.json(
-        { 
-          error: `Roboflow API error: ${response.status}`,
-          details: errorText,
-          debug: `Check API key validity and model access at https://app.roboflow.com/`
-        }, 
-        { status: 500 }
-      );
-    }
+    let caption = "";
+    let detectedLabels: string[] = [];
 
-    const result = await response.json();
-    console.log("Roboflow Workflows Response:", JSON.stringify(result, null, 2));
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Roboflow Workflows Response:", JSON.stringify(result, null, 2));
 
-    // Helper to recursively extract strings to find the Florence-2 caption
-    function extractAllStrings(obj: any): string[] {
-      let strings: string[] = [];
-      if (typeof obj === 'string') {
-        // Skip base64-like strings or URLs (no spaces, very long, or start with http)
-        if (obj.length > 50 && !obj.includes(' ')) return strings;
-        if (obj.startsWith('http') || obj.startsWith('data:')) return strings;
-        strings.push(obj);
-      } else if (Array.isArray(obj)) {
-        for (const item of obj) strings.push(...extractAllStrings(item));
-      } else if (typeof obj === 'object' && obj !== null) {
-        for (const key in obj) {
-          if (key === 'image' || key.includes('base64') || key === 'time' || key === 'api_key') continue;
-          strings.push(...extractAllStrings(obj[key]));
+      function extractAllStrings(obj: any): string[] {
+        let strings: string[] = [];
+        if (typeof obj === 'string') {
+          if (obj.length > 50 && !obj.includes(' ')) return strings;
+          if (obj.startsWith('http') || obj.startsWith('data:')) return strings;
+          strings.push(obj);
+        } else if (Array.isArray(obj)) {
+          for (const item of obj) strings.push(...extractAllStrings(item));
+        } else if (typeof obj === 'object' && obj !== null) {
+          for (const key in obj) {
+            if (key === 'image' || key.includes('base64') || key === 'time' || key === 'api_key') continue;
+            strings.push(...extractAllStrings(obj[key]));
+          }
         }
+        return strings;
       }
-      return strings;
+
+      const allStrings = extractAllStrings(result);
+      caption = allStrings.sort((a, b) => b.length - a.length)[0] || "";
+    } else {
+      console.warn(`Roboflow Workflow returned ${response.status}. Attempting fallback object detection via Roboflow API...`);
+      try {
+        const fallbackRes = await fetch(
+          `https://detect.roboflow.com/coco/3?api_key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: imageBase64,
+          }
+        );
+
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          if (fallbackData.predictions && fallbackData.predictions.length > 0) {
+            const preds = fallbackData.predictions.map((p: any) => p.class);
+            detectedLabels = preds;
+            caption = `Detected objects: ${preds.join(", ")}`;
+          }
+        }
+      } catch (fbErr) {
+        console.warn("Roboflow COCO fallback error:", fbErr);
+      }
     }
+    // Combine caption and OCR text for keyword search
+    const textToScan = `${caption} ${ocrText || ""}`.toLowerCase();
 
-    const allStrings = extractAllStrings(result);
-    // Florence-2 output is typically a long descriptive string
-    const caption = allStrings.sort((a, b) => b.length - a.length)[0] || "Unknown item";
-    const captionLower = caption.toLowerCase();
-
-    // Analyze caption for keywords
     const commonWasteKeywords = [
       ...RARITY_LABELS.Legendary, ...RARITY_LABELS.Epic, ...RARITY_LABELS.Rare, ...RARITY_LABELS.Common
     ];
-    const detectedLabels = commonWasteKeywords.filter(kw => captionLower.includes(kw));
+    const detectedKeywords = commonWasteKeywords.filter(kw => textToScan.includes(kw));
+    const allLabels = Array.from(new Set([...detectedLabels, ...detectedKeywords]));
 
-    let primaryLabel = "Waste Material";
-    if (detectedLabels.length > 0) {
-      primaryLabel = toTitleCase(detectedLabels[0]);
-    } else {
-      // Smart Fallback: Try to extract a clean noun phrase from the description
-      const words = caption.replace(/[^a-zA-Z0-9 ]/g, "").split(" ");
+    let primaryLabel = "Recyclable Artifact";
+    if (allLabels.length > 0) {
+      primaryLabel = toTitleCase(allLabels[0]);
+    } else if (caption) {
+      const words = caption.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(Boolean);
       let startIndex = 0;
       if (words.length > 0 && ["a", "an", "the"].includes(words[0].toLowerCase())) {
         startIndex = 1;
       }
-      const stopWords = ["on", "in", "with", "at", "and", "of", "for", "to", "over", "under", "next"];
+      const stopWords = ["on", "in", "with", "at", "and", "of", "for", "to", "over", "under", "next", "detected", "objects"];
       let nounWords = [];
       for (let i = startIndex; i < words.length; i++) {
         if (stopWords.includes(words[i].toLowerCase())) break;
         nounWords.push(words[i]);
-        if (nounWords.length >= 3) break; // keep it short
+        if (nounWords.length >= 3) break;
       }
-      primaryLabel = nounWords.length > 0 ? toTitleCase(nounWords.join(" ")) : "Waste Material";
+      if (nounWords.length > 0) primaryLabel = toTitleCase(nounWords.join(" "));
     }
 
-    const rarity = detectRarity(detectedLabels.length > 0 ? detectedLabels : [primaryLabel.toLowerCase()]);
+    const displayCaption = caption || (ocrText ? `Text extracted from item: "${ocrText}"` : "Identified recyclable discarded material.");
+    const rarity = detectRarity(allLabels.length > 0 ? allLabels : [primaryLabel.toLowerCase()]);
     const xp = XP_VALUES[rarity] || 25;
 
     const finalDescription = ocrText
-      ? `Analysis: "${caption}" (OCR Text Detected: "${ocrText}")`
-      : `Analysis: "${caption}"`;
+      ? `Analysis: "${displayCaption}" (OCR Label: "${ocrText}")`
+      : `Analysis: "${displayCaption}"`;
 
     return NextResponse.json({
       itemName: primaryLabel,
@@ -229,7 +241,7 @@ export async function POST(req: NextRequest) {
       upcycleRecipe: buildUpcycle(primaryLabel, rarity),
       xp,
       ecoFact: getEcoFact(primaryLabel, rarity),
-      detectedClasses: detectedLabels,
+      detectedClasses: allLabels,
       extractedText: ocrText,
       ocrData: ocrText ? { text: ocrText } : null,
     });
