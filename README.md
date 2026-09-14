@@ -14,13 +14,12 @@
 
 ## ✦ Key Features
 
-- **AI Vision Analysis**: Powered by **Roboflow's Florence-2** model for precise object detection and material identification.
+- **AI Vision Analysis**: Powered by **Roboflow Qwen VL** model for multimodal object detection and material identification.
 - **RPG Progression**: 
     - **Rarity System**: Items classified as Common, Rare, Epic, or Legendary.
     - **XP Rewards**: Earn XP for every scan based on item rarity.
     - **Rank Ascension**: Climb from *Seedling* to *Gaia Legend*.
 - **Creative Upcycling**: Generates contextual "Transmutation Recipes" for your waste.
-- **OCR Integration**: Optional text extraction for product labels and packaging context.
 - **Persistent Stats**: Your rank and XP are saved locally in your browser.
 
 ---
@@ -83,10 +82,9 @@
 ## ✦ Vision Integration Details
 
 EcoQuest uses the **Roboflow Workflows** API. When an image is uploaded:
-1. The image is processed by the **Florence-2** model.
-2. A material-aware prompt guides the AI to determine the item's properties.
-3. The result is parsed for keywords to determine rarity and generate eco-facts.
-4. If **OCR** is enabled, the system extracts text from the image to provide additional context for the analysis.
+1. The image is processed by the **Qwen VL** vision-language model.
+2. A material-aware prompt guides the AI to identify and categorize the item.
+3. The result is parsed for keywords to determine rarity, generate eco-facts, and assign experience points.
 
 ---
 
